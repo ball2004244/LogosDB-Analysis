@@ -1,0 +1,49 @@
+services:
+    namenode:
+      image: apache/hadoop:3
+      hostname: namenode
+      command: ["hdfs", "namenode"]
+      ports:
+        - 9870:9870
+      env_file:
+        - ./config
+      environment:
+          ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+      volumes:
+        - ./data:/data
+    datanode:
+      image: apache/hadoop:3
+      command: ["hdfs", "datanode"]
+      env_file:
+        - ./config      
+    resourcemanager:
+      image: apache/hadoop:3
+      hostname: resourcemanager
+      command: ["yarn", "resourcemanager"]
+      ports:
+         - 8088:8088
+      env_file:
+        - ./config
+      volumes:
+        - ./test.sh:/opt/test.sh
+    nodemanager:
+      image: apache/hadoop:3
+      command: ["yarn", "nodemanager"]
+      env_file:
+        - ./config
+    spark-master:
+      image: bde2020/spark-master:3.0.1-hadoop3.2
+      ports:
+        - 9090:8080
+        - 7077:7077
+      environment:
+        - INIT_DAEMON_STEP=setup_spark
+      volumes:
+        - ./analysis:/analysis
+    spark-worker:
+      image: bde2020/spark-worker:3.0.1-hadoop3.2
+      environment:
+        - SPARK_MASTER=spark://spark-master:7077
+        - INIT_DAEMON_STEP=setup_spark
+      depends_on:
+        - spark-master
